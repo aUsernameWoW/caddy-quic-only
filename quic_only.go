@@ -25,9 +25,12 @@ type QuicOnly struct {
 	// If both `h3` and `h1`/`h2` are specified, both UDP and TCP listeners will be created.
 	Protocols []string `json:"protocols,omitempty"`
 	
-	// EnableQUICOnly, if true, will only create UDP listeners for HTTP/3.
-	// This overrides the Protocols setting.
-	EnableQUICOnly bool `json:"enable_quic_only,omitempty"`
+	// Mode specifies the listener mode.
+	// Supported values are:
+	// - `quic_only`: Only create UDP listeners for HTTP/3.
+	// - `tcp_only`: Only create TCP listeners for HTTP/1.1 and HTTP/2.
+	// - `default`: Create both UDP and TCP listeners based on Protocols.
+	Mode string `json:"mode,omitempty"`
 }
 
 // CaddyModule returns the Caddy module information.
@@ -50,14 +53,21 @@ func (qo QuicOnly) WrapListener(ln net.Listener) net.Listener {
 	// Log the configured protocols for debugging
 	logger := caddy.Log()
 	
-	// Check if QUIC-only mode is enabled
-	if qo.EnableQUICOnly {
+	// Check the mode
+	switch qo.Mode {
+	case "quic_only":
 		logger.Info("QuicOnly listener wrapper applied: QUIC-only mode enabled")
 		// In a real implementation, we would need to ensure that only UDP listeners are created
 		// This is a complex task that requires deep integration with Caddy's listener creation logic
 		// For now, we'll just log a warning that this is not fully implemented
 		logger.Warn("QUIC-only mode is not fully implemented in this example")
-	} else {
+	case "tcp_only":
+		logger.Info("QuicOnly listener wrapper applied: TCP-only mode enabled")
+		// In a real implementation, we would need to ensure that only TCP listeners are created
+		// This is a complex task that requires deep integration with Caddy's listener creation logic
+		// For now, we'll just log a warning that this is not fully implemented
+		logger.Warn("TCP-only mode is not fully implemented in this example")
+	default:
 		logger.Info("QuicOnly listener wrapper applied", zap.Strings("protocols", qo.Protocols))
 	}
 	
@@ -70,14 +80,21 @@ func (qo *QuicOnly) Provision(ctx caddy.Context) error {
 	// Log the configured protocols for debugging
 	logger := ctx.Logger()
 	
-	// Check if QUIC-only mode is enabled
-	if qo.EnableQUICOnly {
+	// Check the mode
+	switch qo.Mode {
+	case "quic_only":
 		logger.Info("Provisioning QuicOnly module: QUIC-only mode enabled")
 		// In a real implementation, we would need to ensure that only UDP listeners are created
 		// This is a complex task that requires deep integration with Caddy's listener creation logic
 		// For now, we'll just log a warning that this is not fully implemented
 		logger.Warn("QUIC-only mode is not fully implemented in this example")
-	} else {
+	case "tcp_only":
+		logger.Info("Provisioning QuicOnly module: TCP-only mode enabled")
+		// In a real implementation, we would need to ensure that only TCP listeners are created
+		// This is a complex task that requires deep integration with Caddy's listener creation logic
+		// For now, we'll just log a warning that this is not fully implemented
+		logger.Warn("TCP-only mode is not fully implemented in this example")
+	default:
 		logger.Info("Provisioning QuicOnly module", zap.Strings("protocols", qo.Protocols))
 	}
 	
