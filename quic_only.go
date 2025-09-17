@@ -1,7 +1,7 @@
 package quiconly
 
 import (
-	"fmt"
+	"errors"
 	"net"
 	
 	"github.com/caddyserver/caddy/v2"
@@ -78,7 +78,7 @@ func (qo *QuicOnly) Validate() error {
 		// Valid modes
 		return nil
 	default:
-		return fmt.Errorf("invalid mode: %s (must be one of: quic_only, tcp_only, default)", qo.Mode)
+		return errors.New("invalid mode: " + qo.Mode + " (must be one of: quic_only, tcp_only, default)")
 	}
 }
 
