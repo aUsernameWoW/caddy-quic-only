@@ -1,0 +1,13 @@
+{
+  "name": "caddy-quic-only",
+  "version": "0.1.0",
+  "description": "A Caddy module for QUIC-only listeners",
+  "main": "quic_only.go",
+  "scripts": {
+    "build": "go build -o caddy-quic-only",
+    "test": "go test -v"
+  },
+  "dependencies": {
+    "github.com/caddyserver/caddy/v2": "latest"
+  }
+}
