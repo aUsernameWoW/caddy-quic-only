@@ -1,0 +1,14 @@
+{
+    servers {
+        listener_wrappers {
+            quic_only {
+                mode quic_only
+            }
+            tls
+        }
+    }
+}
+
+:8443 {
+    respond "Hello, QUIC-only world!" 200
+}
