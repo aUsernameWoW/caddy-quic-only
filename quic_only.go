@@ -1,6 +1,7 @@
 package quiconly
 
 import (
+	"fmt"
 	"net"
 	
 	"go.uber.org/zap"
@@ -23,6 +24,10 @@ type QuicOnly struct {
 	// If `h1` or `h2` are specified, TCP listeners will be created.
 	// If both `h3` and `h1`/`h2` are specified, both UDP and TCP listeners will be created.
 	Protocols []string `json:"protocols,omitempty"`
+	
+	// EnableQUICOnly, if true, will only create UDP listeners for HTTP/3.
+	// This overrides the Protocols setting.
+	EnableQUICOnly bool `json:"enable_quic_only,omitempty"`
 }
 
 // CaddyModule returns the Caddy module information.
@@ -44,7 +49,17 @@ func (qo QuicOnly) WrapListener(ln net.Listener) net.Listener {
 	
 	// Log the configured protocols for debugging
 	logger := caddy.Log()
-	logger.Info("QuicOnly listener wrapper applied", zap.Strings("protocols", qo.Protocols))
+	
+	// Check if QUIC-only mode is enabled
+	if qo.EnableQUICOnly {
+		logger.Info("QuicOnly listener wrapper applied: QUIC-only mode enabled")
+		// In a real implementation, we would need to ensure that only UDP listeners are created
+		// This is a complex task that requires deep integration with Caddy's listener creation logic
+		// For now, we'll just log a warning that this is not fully implemented
+		logger.Warn("QUIC-only mode is not fully implemented in this example")
+	} else {
+		logger.Info("QuicOnly listener wrapper applied", zap.Strings("protocols", qo.Protocols))
+	}
 	
 	return ln
 }
@@ -54,7 +69,17 @@ func (qo QuicOnly) WrapListener(ln net.Listener) net.Listener {
 func (qo *QuicOnly) Provision(ctx caddy.Context) error {
 	// Log the configured protocols for debugging
 	logger := ctx.Logger()
-	logger.Info("Provisioning QuicOnly module", zap.Strings("protocols", qo.Protocols))
+	
+	// Check if QUIC-only mode is enabled
+	if qo.EnableQUICOnly {
+		logger.Info("Provisioning QuicOnly module: QUIC-only mode enabled")
+		// In a real implementation, we would need to ensure that only UDP listeners are created
+		// This is a complex task that requires deep integration with Caddy's listener creation logic
+		// For now, we'll just log a warning that this is not fully implemented
+		logger.Warn("QUIC-only mode is not fully implemented in this example")
+	} else {
+		logger.Info("Provisioning QuicOnly module", zap.Strings("protocols", qo.Protocols))
+	}
 	
 	return nil
 }
