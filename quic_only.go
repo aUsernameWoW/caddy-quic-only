@@ -1,13 +1,10 @@
 package quiconly
 
 import (
-	"context"
 	"fmt"
 	"net"
-	"strings"
 	
 	"github.com/caddyserver/caddy/v2"
-	"github.com/caddyserver/caddy/v2/modules/caddyhttp"
 	"go.uber.org/zap"
 )
 
