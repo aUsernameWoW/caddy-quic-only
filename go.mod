@@ -1,4 +1,4 @@
-module github.com/caddyserver/caddy-quic-only
+module github.com/aUsernameWoW/caddy-quic-only
 
 go 1.25
 
