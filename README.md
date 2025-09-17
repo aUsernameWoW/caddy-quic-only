@@ -24,6 +24,7 @@ xcaddy build --with github.com/aUsernameWoW/caddy-quic-only=.
 
 ### Caddyfile
 
+#### QUIC-only mode:
 ```
 {
     servers {
@@ -41,8 +42,27 @@ xcaddy build --with github.com/aUsernameWoW/caddy-quic-only=.
 }
 ```
 
+#### TCP-only mode:
+```
+{
+    servers {
+        listener_wrappers {
+            quic_only {
+                mode tcp_only
+            }
+            tls
+        }
+    }
+}
+
+:8443 {
+    respond "Hello, TCP-only world!" 200
+}
+```
+
 ### JSON Configuration
 
+#### QUIC-only mode:
 ```json
 {
   "apps": {
@@ -77,6 +97,41 @@ xcaddy build --with github.com/aUsernameWoW/caddy-quic-only=.
 }
 ```
 
+#### TCP-only mode:
+```json
+{
+  "apps": {
+    "http": {
+      "servers": {
+        "example": {
+          "listen": [":8443"],
+          "listener_wrappers": [
+            {
+              "wrapper": "quic_only",
+              "mode": "tcp_only"
+            },
+            {
+              "wrapper": "tls"
+            }
+          ],
+          "routes": [
+            {
+              "handle": [
+                {
+                  "handler": "static_response",
+                  "body": "Hello, TCP-only world!",
+                  "status_code": 200
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+```
+
 ## Modes
 
 - `quic_only` - Only allow QUIC (HTTP/3) connections
@@ -87,7 +142,12 @@ xcaddy build --with github.com/aUsernameWoW/caddy-quic-only=.
 
 This module implements the `caddy.ListenerWrapper` interface to modify how Caddy handles incoming connections. The wrapper is applied to listeners, and based on the configured mode, it can restrict which protocols are allowed.
 
-Note that fully implementing QUIC-only or TCP-only behavior requires deeper integration with Caddy's server configuration, as the protocol selection happens at the server level rather than just the listener level. This module provides a starting point for that integration.
+In addition to wrapping listeners, the module also modifies the server's protocol configuration to ensure that only the appropriate protocols are enabled:
+- In `quic_only` mode, only HTTP/3 (h3) is enabled
+- In `tcp_only` mode, only HTTP/1.1 (h1) and HTTP/2 (h2) are enabled
+- In `default` mode, all protocols are enabled as configured by the server
+
+This approach provides a more complete solution than just wrapping listeners, as it prevents Caddy from even attempting to create listeners for protocols that are not wanted.
 
 ## License
 

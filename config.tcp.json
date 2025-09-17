@@ -1,0 +1,31 @@
+{
+  "apps": {
+    "http": {
+      "servers": {
+        "example": {
+          "listen": [":8443"],
+          "listener_wrappers": [
+            {
+              "wrapper": "quic_only",
+              "mode": "tcp_only"
+            },
+            {
+              "wrapper": "tls"
+            }
+          ],
+          "routes": [
+            {
+              "handle": [
+                {
+                  "handler": "static_response",
+                  "body": "Hello, TCP-only world!",
+                  "status_code": 200
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  }
+}

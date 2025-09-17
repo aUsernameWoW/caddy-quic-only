@@ -1,0 +1,14 @@
+{
+    servers {
+        listener_wrappers {
+            quic_only {
+                mode tcp_only
+            }
+            tls
+        }
+    }
+}
+
+:8443 {
+    respond "Hello, TCP-only world!" 200
+}
