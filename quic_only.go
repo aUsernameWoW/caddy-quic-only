@@ -36,24 +36,15 @@ func (QuicOnly) CaddyModule() caddy.ModuleInfo {
 
 // WrapListener implements caddy.ListenerWrapper.
 // This method is called for each listener that Caddy creates.
+// Note: The actual protocol filtering is done in the Provision method.
+// This wrapper is kept for consistency with the ListenerWrapper interface.
 func (qo QuicOnly) WrapListener(ln net.Listener) net.Listener {
 	// Log that the listener wrapper is being applied
 	qo.logger.Info("QuicOnly listener wrapper applied", zap.String("mode", qo.Mode))
 	
-	// Check the mode
-	switch qo.Mode {
-	case "quic_only":
-		// In QUIC-only mode, we want to prevent TCP listeners from being created for HTTP/1.1 and HTTP/2
-		qo.logger.Info("QUIC-only mode enabled - will only allow HTTP/3 traffic")
-		return &quicOnlyListener{ln, qo.logger}
-	case "tcp_only":
-		// In TCP-only mode, we want to prevent UDP/QUIC listeners from being created
-		qo.logger.Info("TCP-only mode enabled - will only allow HTTP/1.1 and HTTP/2 traffic")
-		return &tcpOnlyListener{ln, qo.logger}
-	default:
-		qo.logger.Info("Default mode enabled - allowing all protocols")
-	}
-	
+	// In this implementation, the actual protocol filtering is done in the Provision method
+	// by modifying the server's Protocols field. This wrapper simply returns the original
+	// listener without modification, as the protocol filtering is handled at a higher level.
 	return ln
 }
 
@@ -66,7 +57,19 @@ func (qo *QuicOnly) Provision(ctx caddy.Context) error {
 	qo.logger.Info("Provisioning QuicOnly module", zap.String("mode", qo.Mode))
 	
 	// If we're in a server context, modify the server's protocols
-	if server, ok := ctx.Value(caddyhttp.ServerCtxKey).(*caddyhttp.Server); ok && server != nil {
+	serverValue := ctx.Value(caddyhttp.ServerCtxKey)
+	if serverValue == nil {
+		qo.logger.Warn("Server context not available, skipping protocol modification")
+		return nil
+	}
+	
+	server, ok := serverValue.(*caddyhttp.Server)
+	if !ok {
+		qo.logger.Warn("Server context is not of expected type, skipping protocol modification")
+		return nil
+	}
+	
+	if server != nil {
 		qo.logger.Debug("Modifying server protocols", zap.String("mode", qo.Mode))
 		
 		// Modify the server's protocols based on the mode
@@ -80,11 +83,14 @@ func (qo *QuicOnly) Provision(ctx caddy.Context) error {
 					protocols = append(protocols, p)
 				}
 			}
+			// If h3 is not in the original protocols, we don't add it automatically
+			// This prevents enabling HTTP/3 when it wasn't intended
 			if len(protocols) == 0 {
-				protocols = []string{"h3"}
+				qo.logger.Info("QUIC-only mode enabled but h3 not in original protocols, no protocols configured")
+			} else {
+				server.Protocols = protocols
+				qo.logger.Info("Configured server for QUIC-only mode", zap.Strings("protocols", server.Protocols))
 			}
-			server.Protocols = protocols
-			qo.logger.Info("Configured server for QUIC-only mode", zap.Strings("protocols", server.Protocols))
 		case "tcp_only":
 			// For TCP-only mode, we want to only enable HTTP/1.1 and HTTP/2
 			// Filter out h3 protocol, keep h1 and h2
@@ -94,11 +100,13 @@ func (qo *QuicOnly) Provision(ctx caddy.Context) error {
 					protocols = append(protocols, p)
 				}
 			}
+			// If neither h1 nor h2 is in the original protocols, we don't add them automatically
 			if len(protocols) == 0 {
-				protocols = []string{"h1", "h2"}
+				qo.logger.Info("TCP-only mode enabled but neither h1 nor h2 in original protocols, no protocols configured")
+			} else {
+				server.Protocols = protocols
+				qo.logger.Info("Configured server for TCP-only mode", zap.Strings("protocols", server.Protocols))
 			}
-			server.Protocols = protocols
-			qo.logger.Info("Configured server for TCP-only mode", zap.Strings("protocols", server.Protocols))
 		default:
 			qo.logger.Info("Default mode enabled - using server's configured protocols", zap.Strings("protocols", server.Protocols))
 		}
@@ -141,39 +149,7 @@ func (qo *QuicOnly) UnmarshalCaddyfile(d *caddyfile.Dispenser) error {
 	return nil
 }
 
-// quicOnlyListener is a wrapper that modifies listener behavior for QUIC-only mode
-type quicOnlyListener struct {
-	net.Listener
-	logger *zap.Logger
-}
 
-// Accept implements net.Listener
-func (ln *quicOnlyListener) Accept() (net.Conn, error) {
-	// In QUIC-only mode, we would ideally prevent TCP connections entirely
-	// For now, we'll just log that a connection was accepted
-	conn, err := ln.Listener.Accept()
-	if err == nil {
-		ln.logger.Debug("Accepted connection in QUIC-only mode", zap.String("remote_addr", conn.RemoteAddr().String()))
-	}
-	return conn, err
-}
-
-// tcpOnlyListener is a wrapper that modifies listener behavior for TCP-only mode
-type tcpOnlyListener struct {
-	net.Listener
-	logger *zap.Logger
-}
-
-// Accept implements net.Listener
-func (ln *tcpOnlyListener) Accept() (net.Conn, error) {
-	// In TCP-only mode, we would ideally prevent UDP/QUIC connections entirely
-	// For now, we'll just log that a connection was accepted
-	conn, err := ln.Listener.Accept()
-	if err == nil {
-		ln.logger.Debug("Accepted connection in TCP-only mode", zap.String("remote_addr", conn.RemoteAddr().String()))
-	}
-	return conn, err
-}
 
 // Interface guards
 var (

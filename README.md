@@ -140,9 +140,8 @@ xcaddy build --with github.com/aUsernameWoW/caddy-quic-only=.
 
 ## How it works
 
-This module implements the `caddy.ListenerWrapper` interface to modify how Caddy handles incoming connections. The wrapper is applied to listeners, and based on the configured mode, it can restrict which protocols are allowed.
+This module implements the `caddy.ListenerWrapper` interface, but the actual protocol filtering is done by modifying the server's protocol configuration. The listener wrapper is kept for consistency with the ListenerWrapper interface, but the real work is done in the server's protocol configuration:
 
-In addition to wrapping listeners, the module also modifies the server's protocol configuration to ensure that only the appropriate protocols are enabled:
 - In `quic_only` mode, only HTTP/3 (h3) is enabled
 - In `tcp_only` mode, only HTTP/1.1 (h1) and HTTP/2 (h2) are enabled
 - In `default` mode, all protocols are enabled as configured by the server
